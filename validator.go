@@ -66,7 +66,10 @@ func validateMx(ctx context.Context, domain string) error {
 	r := net.Resolver{}
 	_, err := r.LookupMX(ctx, domain)
 	if err != nil {
-		return errors.New("lockup MX record failed")
+		// Based on RFC5321 if no MX record found, we should fallback to A or AAAA record check
+		if _, err := r.LookupHost(ctx, domain); err != nil {
+			return errors.New("lockup failed")
+		}
 	}
 	return nil
 }

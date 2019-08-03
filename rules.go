@@ -50,7 +50,7 @@ var (
 	}
 )
 
-func isValiUserName(u, domain string) error {
+func isValidUserName(u, domain string) error {
 	if fn, ok := domainRules[domain]; ok {
 		return fn(u)
 	}

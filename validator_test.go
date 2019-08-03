@@ -2,6 +2,7 @@ package emailvalidator
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -114,4 +115,23 @@ func TestValidate(t *testing.T) {
 		assert.Equal(t, tf.free, free)
 		assert.Equal(t, tf.disposable, disposable)
 	}
+}
+
+func TestValidateMX(t *testing.T) {
+	chk := CheckMX(0)
+	_, _, err := Validate("validemail@gmail.com", chk)
+	require.Error(t, err)
+
+	chk = CheckMX(time.Second)
+
+	f, d, err := Validate("email@google.com", chk)
+	require.NoError(t, err)
+	assert.False(t, d)
+	assert.False(t, f)
+
+	f, d, err = Validate("email@ifsomeonebuythisdomainandrunitsomewherethistestfails.com", chk)
+	require.Error(t, err)
+	assert.False(t, d)
+	assert.False(t, f)
+
 }

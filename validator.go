@@ -23,22 +23,6 @@ func isValidTLD(in string) bool {
 	return tlds[in]
 }
 
-func isValiUserName(u string) error {
-	l := len(u) - 1
-	for i, c := range u {
-		switch c {
-		case ' ', '\t', '\n':
-			return errors.New("username contains white space")
-		case '.':
-			if i == 0 || i == l {
-				return errors.New("dot can not begin or end username")
-			}
-		}
-	}
-
-	return nil
-}
-
 func extractEmailParts(email string) (username string, domain string, tld string, err error) {
 	parts := strings.Split(email, "@")
 	if len(parts) != 2 {
@@ -67,7 +51,7 @@ func Validate(address string) (free bool, disposable bool, err error) {
 		return false, false, fmt.Errorf("the %s is not valid tld", tld)
 	}
 
-	if err := isValiUserName(username); err != nil {
+	if err := isValiUserName(username, domain); err != nil {
 		return false, false, err
 	}
 

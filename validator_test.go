@@ -22,6 +22,11 @@ var (
 			disposable: false,
 		},
 		{
+			email:      "test.with.dot+extra@gmail.com",
+			free:       true,
+			disposable: false,
+		},
+		{
 			email:      "test@things.10mail.org",
 			free:       false,
 			disposable: true,
@@ -49,7 +54,19 @@ var (
 			fail:  true,
 		},
 		{
-			email: "fa il@gmail.com",
+			email: "fa illong@gmail.com",
+			fail:  true,
+		},
+		{
+			email: "fa il@mysite.com",
+			fail:  true,
+		},
+		{
+			email: ".fail@mysite.com",
+			fail:  true,
+		},
+		{
+			email: "fail.@mysite.com",
 			fail:  true,
 		},
 		{
@@ -60,19 +77,41 @@ var (
 			email: "fail.@gmail.com",
 			fail:  true,
 		},
+		{
+			email: "fail@gmail.com",
+			fail:  true,
+		},
+		{
+			email: "fail+extra@gmail.com",
+			fail:  true,
+		},
+		{
+			email: "faillong+ex tra@gmail.com",
+			fail:  true,
+		},
+		{
+			email: "faillong+ex,tra@gmail.com",
+			fail:  true,
+		},
+		{
+			email: "fail.+extra@gmail.com",
+			fail:  true,
+		},
+		{
+			email: "fail<user>@gmail.com",
+			fail:  true,
+		},
 	}
 )
 
 func TestValidate(t *testing.T) {
 	for _, tf := range testFixtures {
-		t.Run(tf.email, func(t *testing.T) {
-			free, disposable, err := Validate(tf.email)
-			if err != nil {
-				require.True(t, tf.fail)
-				return
-			}
-			assert.Equal(t, tf.free, free)
-			assert.Equal(t, tf.disposable, disposable)
-		})
+		free, disposable, err := Validate(tf.email)
+		if err != nil {
+			require.True(t, tf.fail)
+			continue
+		}
+		assert.Equal(t, tf.free, free)
+		assert.Equal(t, tf.disposable, disposable)
 	}
 }

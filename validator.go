@@ -28,6 +28,7 @@ type ValidationResult struct {
 	MXValidation ValidationState `json:"mx_validation"`
 }
 
+// Options internally used to handle the options, use OptionSetter to change the option
 type Options struct {
 	mxValidation        int
 	mxValidationTimeout time.Duration

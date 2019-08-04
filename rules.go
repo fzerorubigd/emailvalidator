@@ -15,6 +15,7 @@ var (
 var (
 	domainRules = map[string]domainRulesValidation{
 		"gmail.com": func(u string) error {
+			// https://support.google.com/mail/answer/9211434?hl=en
 			parts := strings.SplitN(u, "+", 2)
 			total := len(parts[0])
 			l := total - 1

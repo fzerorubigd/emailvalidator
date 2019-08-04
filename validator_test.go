@@ -1,6 +1,8 @@
 package emailvalidator
 
 import (
+	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
@@ -10,8 +12,8 @@ import (
 
 type fixture struct {
 	email      string
-	free       bool
-	disposable bool
+	free       ValidationState
+	disposable ValidationState
 	fail       bool
 }
 
@@ -19,28 +21,28 @@ var (
 	testFixtures = []fixture{
 		{
 			email:      "test.with.dot@gmail.com",
-			free:       true,
-			disposable: false,
+			free:       ValidationStateTrue,
+			disposable: ValidationStateFalse,
 		},
 		{
 			email:      "test.with.dot+extra@gmail.com",
-			free:       true,
-			disposable: false,
+			free:       ValidationStateTrue,
+			disposable: ValidationStateFalse,
 		},
 		{
 			email:      "test@things.10mail.org",
-			free:       false,
-			disposable: true,
+			free:       ValidationStateFalse,
+			disposable: ValidationStateTrue,
 		},
 		{
 			email:      "test@things.more.10mail.org",
-			free:       false,
-			disposable: true,
+			free:       ValidationStateFalse,
+			disposable: ValidationStateTrue,
 		},
 		{
 			email:      "iub65391@bcaoo.com",
-			free:       false,
-			disposable: true,
+			free:       ValidationStateFalse,
+			disposable: ValidationStateTrue,
 		},
 		{
 			email: "fail@iub65391@bcaoo.com",
@@ -102,36 +104,74 @@ var (
 			email: "fail<user>@gmail.com",
 			fail:  true,
 		},
+		{
+			email: strings.Repeat("a", 65) + "@mydomain.com",
+			fail:  true,
+		},
+		{
+			email: "valid@mydomain" + strings.Repeat("a", 255) + ".com",
+			fail:  true,
+		},
 	}
 )
 
 func TestValidate(t *testing.T) {
 	for _, tf := range testFixtures {
-		free, disposable, err := Validate(tf.email)
+		res, err := Validate(tf.email)
 		if err != nil {
 			require.True(t, tf.fail)
 			continue
 		}
-		assert.Equal(t, tf.free, free)
-		assert.Equal(t, tf.disposable, disposable)
+		assert.Equal(t, tf.free, res.FreeProvider)
+		assert.Equal(t, tf.disposable, res.Disposable)
 	}
 }
 
 func TestValidateMX(t *testing.T) {
-	chk := CheckMX(0)
-	_, _, err := Validate("validemail@gmail.com", chk)
+	chk := CheckMX(0, false)
+	res, err := Validate("validemail@gmail.com", chk)
 	require.Error(t, err)
 
-	chk = CheckMX(time.Second)
-
-	f, d, err := Validate("email@google.com", chk)
+	res, err = Validate("email@google.com", CheckMX(time.Second, false))
 	require.NoError(t, err)
-	assert.False(t, d)
-	assert.False(t, f)
+	assert.Equal(t, ValidationStateTrue, res.MXValidation)
+	assert.Equal(t, ValidationStateFalse, res.Disposable)
+	assert.Equal(t, ValidationStateFalse, res.FreeProvider)
 
-	f, d, err = Validate("email@ifsomeonebuythisdomainandrunitsomewherethistestfails.com", chk)
+	res, err = Validate("email@ifsomeonebuythisdomainandrunitsomewherethistestfails.com", CheckMX(time.Second, true))
+	require.NoError(t, err)
+	assert.Equal(t, ValidationStateFalse, res.MXValidation)
+	assert.Equal(t, ValidationStateFalse, res.Disposable)
+	assert.Equal(t, ValidationStateFalse, res.FreeProvider)
+}
+
+func TestJSONResult(t *testing.T) {
+	res := ValidationResult{
+		FreeProvider: ValidationStateNotChecked,
+		Disposable:   ValidationStateFalse,
+		MXValidation: ValidationStateTrue,
+	}
+
+	b, err := json.Marshal(res)
+	require.NoError(t, err)
+
+	m := map[string]interface{}{}
+	err = json.Unmarshal(b, &m)
+	require.NoError(t, err)
+
+	assert.Equal(t, map[string]interface{}{
+		"free_provider": nil,
+		"disposable":    false,
+		"mx_validation": true,
+	}, m)
+
+	res = ValidationResult{
+		FreeProvider: -1,
+		Disposable:   -2,
+		MXValidation: -3,
+	}
+
+	_, err = json.Marshal(&res)
 	require.Error(t, err)
-	assert.False(t, d)
-	assert.False(t, f)
 
 }

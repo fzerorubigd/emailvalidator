@@ -26,6 +26,7 @@ type ValidationResult struct {
 	FreeProvider ValidationState `json:"free_provider"`
 	Disposable   ValidationState `json:"disposable"`
 	MXValidation ValidationState `json:"mx_validation"`
+	BlackList    ValidationState `json:"black_list"`
 }
 
 // Options internally used to handle the options, use OptionSetter to change the option
@@ -113,8 +114,12 @@ func validateMx(ctx context.Context, domain string) error {
 	return nil
 }
 
+func isBlackList(u string) bool {
+	return blackList[strings.ToLower(u)]
+}
+
 // ValidateContext try to validate the email address, the context version, this context used for any
-// extra validation used in teh library (like MX validation)
+// extra validation used in the library (like MX validation)
 func ValidateContext(ctx context.Context, address string, opts ...OptionSetter) (*ValidationResult, error) {
 	opt := &Options{}
 	for i := range opts {
@@ -165,6 +170,7 @@ func ValidateContext(ctx context.Context, address string, opts ...OptionSetter) 
 	res := ValidationResult{
 		Disposable:   ValidationStateFalse,
 		FreeProvider: ValidationStateFalse,
+		BlackList:    ValidationStateFalse,
 	}
 
 	var dispOrFree bool
@@ -176,6 +182,10 @@ func ValidateContext(ctx context.Context, address string, opts ...OptionSetter) 
 	if isFreeProvider(domain) {
 		res.FreeProvider = ValidationStateTrue
 		dispOrFree = true
+	}
+
+	if isBlackList(username) {
+		res.BlackList = ValidationStateTrue
 	}
 
 	mxCheck := opt.mxValidation == 1 && (!dispOrFree || opt.mxForce == 1)

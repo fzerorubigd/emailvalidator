@@ -14,6 +14,7 @@ type fixture struct {
 	email      string
 	free       ValidationState
 	disposable ValidationState
+	blackList  ValidationState
 	fail       bool
 }
 
@@ -23,26 +24,37 @@ var (
 			email:      "test.with.dot@gmail.com",
 			free:       ValidationStateTrue,
 			disposable: ValidationStateFalse,
+			blackList:  ValidationStateFalse,
 		},
 		{
 			email:      "test.with.dot+extra@gmail.com",
 			free:       ValidationStateTrue,
 			disposable: ValidationStateFalse,
+			blackList:  ValidationStateFalse,
 		},
 		{
 			email:      "test@things.10mail.org",
 			free:       ValidationStateFalse,
 			disposable: ValidationStateTrue,
+			blackList:  ValidationStateFalse,
 		},
 		{
 			email:      "test@things.more.10mail.org",
 			free:       ValidationStateFalse,
 			disposable: ValidationStateTrue,
+			blackList:  ValidationStateFalse,
 		},
 		{
 			email:      "iub65391@bcaoo.com",
 			free:       ValidationStateFalse,
 			disposable: ValidationStateTrue,
+			blackList:  ValidationStateFalse,
+		},
+		{
+			email:      "abuse@example.com",
+			free:       ValidationStateFalse,
+			disposable: ValidationStateFalse,
+			blackList:  ValidationStateTrue,
 		},
 		{
 			email: "fail@iub65391@bcaoo.com",
@@ -124,6 +136,7 @@ func TestValidate(t *testing.T) {
 		}
 		assert.Equal(t, tf.free, res.FreeProvider)
 		assert.Equal(t, tf.disposable, res.Disposable)
+		assert.Equal(t, tf.blackList, res.BlackList)
 	}
 }
 
@@ -163,6 +176,7 @@ func TestJSONResult(t *testing.T) {
 		"free_provider": nil,
 		"disposable":    false,
 		"mx_validation": true,
+		"black_list":    nil,
 	}, m)
 
 	res = ValidationResult{
